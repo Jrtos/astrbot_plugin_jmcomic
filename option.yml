@@ -1,0 +1,32 @@
+client:
+  cache: null
+  domain: []
+  impl: api
+  postman:
+    meta_data:
+      headers: null
+      impersonate: chrome
+      proxies: {}
+    type: curl_cffi
+  retry_times: 5
+dir_rule:
+  base_dir: D:\work\Python\JMCoic
+  normalize_zh: null
+  rule: Bd_Pname
+download:
+  cache: true
+  image:
+    decode: true
+    suffix: .png
+  threading:
+    image: 30
+    photo: 24
+log: true
+plugins:
+  after_photo:
+    - plugin: img2pdf
+      kwargs:
+        pdf_dir: D:/pdf/
+        filename_rule: Pid
+  valid: log
+version: '2.1'
