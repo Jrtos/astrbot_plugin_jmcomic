@@ -10,7 +10,7 @@ client:
     type: curl_cffi
   retry_times: 5
 dir_rule:
-  base_dir: D:\work\Python\JMCoic
+  base_dir: D:\Librury\Desktop\AstrBotLauncher-0.2.0\AstrBot\data\plugins\astrbot_plugin_jmcomic
   normalize_zh: null
   rule: Bd_Pname
 download:
@@ -26,7 +26,7 @@ plugins:
   after_photo:
     - plugin: img2pdf
       kwargs:
-        pdf_dir: D:/pdf/
+        pdf_dir: D:/Librury/Desktop/AstrBotLauncher-0.2.0/AstrBot/data/plugins/astrbot_plugin_jmcomic/download
         filename_rule: Pid
   valid: log
 version: '2.1'
