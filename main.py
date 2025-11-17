@@ -140,16 +140,16 @@ class MyPlugin(Star):
         
         option = jmcomic.create_option_by_file(temp_option_file_pdf)
         jmcomic.download_album(message_str, option)
-        images = find_images_os(user_download_dir)
+        images = find_images_os(user_download_dir_pdf)
         yield event.plain_result(f"共找到 {len(images)} 张图片，按pdf发送：")
         
         # for i, img in enumerate(images, 1):
         #     yield event.image_result(img)  # 发送图片
         #     await asyncio.sleep(1)
-        pdf = Comp.File(file=f'{user_download_dir_pdf}/{message_str}.pdf', name=f'{message_str}.pdf')
+        pdf = Comp.File(file=os.path.abspath(os.path.join(os.path.dirname(user_download_dir_pdf), f"{str(message_str)}.pdf")), name=f'{message_str}.pdf')
         yield event.chain_result([pdf])
 
-        clear_folder(user_download_dir)
+        clear_folder(user_download_dir_pdf)
 
     @filter.command("jms")
     async def helloworld2(self, event: AstrMessageEvent):
