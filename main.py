@@ -2,83 +2,169 @@ from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 import astrbot.api.message_components as Comp
-
 import jmcomic
 from jmcomic import *
+import re
+import os
+import time
+import shutil
+import asyncio
+import logging
+logger = logging.getLogger("jmcomic_plugin")
 
-option = jmcomic.create_option_by_file('D:\Librury\Desktop\AstrBotLauncher-0.2.0\AstrBot\data\plugins\astrbot_plugin_jmcomic\option.yml')
-client = JmOption.default().new_jm_client()
+def extract_numbers(text):
+    # 正则表达式匹配整数、浮点数、负数
+    pattern = r'-?\d+\.?\d*'
+    matches = re.findall(pattern, text)
+    # 转换为数字类型（int 或 float）
+    numbers = []
+    for match in matches:
+        if '.' in match:
+            numbers.append(float(match))
+        else:
+            numbers.append(int(match))
+    return numbers
+def find_images_os(folder_path, extensions=None):
+    if extensions is None:
+        extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'}
+    extensions = {ext.lower() for ext in extensions}
+    
+    image_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if os.path.splitext(file)[1].lower() in extensions:
+                full_path = os.path.join(root, file)
+                image_files.append(full_path)
+    
+    # 按文件名中的数字排序
+    def extract_number(filename):
+        # 提取文件名中的数字部分
+        basename = os.path.basename(filename)
+        numbers = re.findall(r'\d+', basename)
+        if numbers:
+            return int(numbers[0])  # 返回第一个数字
+        return 0  # 如果没有找到数字，则返回0
+    
+    image_files.sort(key=extract_number)
+    return image_files
 
-def download(id: int):
-    jmcomic.download_album(f'{id}', option)
+def extract_integers(text):
+    pattern = r'-?\b\d+\b'
+    matches = re.findall(pattern, text)
+    return [str(match) for match in matches]
 
-def search_name(name: str, pag: int):
-    page: JmSearchPage = client.search_site(search_query=name, page=pag)
+def clear_folder(folder_path):
+    if not os.path.exists(folder_path):
+        print(f"警告: 路径不存在 - {folder_path}")
+        return
 
-    for album_id, title in page:
-        print(f'[{album_id}]: {title}')
+    if not os.path.isdir(folder_path):
+        raise ValueError(f"提供的路径不是文件夹: {folder_path}")
 
-def search_id(id:int):
-    page = client.search_site(search_query=f'{id}')
-    album: JmAlbumDetail = page.single_album
-    print(album.tags)
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        try:
+            if os.path.isfile(item_path) or os.path.islink(item_path):
+                os.unlink(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        except Exception as e:
+            print(f"无法删除 {item_path}: {e}")
 
-@register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
+def get_user_download_dir(user_id):
+    """
+    为每个用户生成独立的下载目录路径
+    """
+    base_dir = "./data/plugins/astrbot_plugin_jmcomic"
+    user_dir = os.path.join(base_dir, "download", user_id)
+    os.makedirs(user_dir, exist_ok=True)
+    return user_dir
+
+def get_user_download_dir_pdf(user_id):
+    """
+    为每个用户生成独立的下载目录路径
+    """
+    base_dir = "./data/plugins/astrbot_plugin_jmcomic"
+    user_dir = os.path.join(base_dir, "pdf", user_id)
+    os.makedirs(user_dir, exist_ok=True)
+    return user_dir
+
+def create_temp_option(option_file, user_download_dir):
+    """
+    创建临时配置文件，将下载目录指向用户的独立目录
+    """
+    import yaml
+    # 读取原始配置
+    with open(option_file, 'r', encoding='utf-8') as f:
+        option_data = yaml.safe_load(f)
+    
+    # 修改下载目录
+    option_data['dir_rule']['base_dir'] = user_download_dir
+    
+    # 创建临时配置文件
+    temp_option_file = os.path.join(user_download_dir, "temp_option.yml")
+    with open(temp_option_file, 'w', encoding='utf-8') as f:
+        yaml.dump(option_data, f, allow_unicode=True)
+    
+    return temp_option_file
+
+@register("jm", "iamfromchangsha", "一个简单的插件", "1.0.0")
 class MyPlugin(Star):
-
     def __init__(self, context: Context):
         super().__init__(context)
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-
-    @filter.command("download")
-    async def download_handler(self, event: AstrMessageEvent):
-        """下载漫画指令"""
-        message_str = event.message_str
-        try:
-            album_id = int(message_str.strip('/download '))
-            yield event.plain_result(f"开始下载漫画 {album_id}...")
-            download(album_id)
-            pdf = Comp.File(file=f'download/{album_id}.pdf',name=f'{album_id}.pdf')
-            yield event.chain_result([pdf])
-        except ValueError:
-            yield event.plain_result("请提供有效的漫画 ID")
-
-    @filter.command("s_id")
-    async def search_id_handler(self, event: AstrMessageEvent):
-        message_str = event.message_str
-        id = int(message_str.strip('/s_id '))
-        page = client.search_site(search_query=f'{id}')
-        album: JmAlbumDetail = page.single_album
-        resolt = ''
-        for i in album.tags:
-            resolt += f'{i}\n'
-        yield event.plain_result(resolt)
-        
-        
-
-    @filter.command("s_name")
-    async def search_name_handler(self, event: AstrMessageEvent):
-        message_str = event.message_str
-        name = message_str.split()
-        page: JmSearchPage = client.search_site(search_query=name[1], page=int(name[2]))
-        yield event.plain_result('正在搜索')
-        resolt = ''
-
-        for album_id, title in page:
-            resolt += f'[{album_id}]: {title}\n'
-        yield event.plain_result(resolt)
-
-    # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
-    @filter.command("helloworld")
+    
+    @filter.command("jm")
     async def helloworld(self, event: AstrMessageEvent):
-        """这是一个 hello world 指令""" # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
         user_name = event.get_sender_name()
+        user_id = event.get_sender_id()  # 获取用户ID以区分不同用户
         message_str = event.message_str # 用户发的纯文本消息字符串
-        message_chain = event.get_messages() # 用户所发的消息的消息链 # from astrbot.api.message_components import *
+        message_chain = event.get_messages() # 用户所发的消息的消息链
         logger.info(message_chain)
-        yield event.plain_result(f"Hello, {user_name}, 你发了 {message_str}!") # 发送一条纯文本消息
+        yield event.plain_result(f"{user_name}, 正在查找 {message_str}!") # 发送一条纯文本消息
+        message_str = extract_integers(message_str)
+        
+        # 为每个用户创建独立的下载目录
+        user_download_dir = get_user_download_dir(user_id)
+        user_download_dir_pdf = get_user_download_dir_pdf(user_id)
+        temp_option_file = create_temp_option(
+            "./data/plugins/astrbot_plugin_jmcomic/option.yml", 
+            user_download_dir
+        )
+        temp_option_file_pdf = create_temp_option(
+            "./data/plugins/astrbot_plugin_jmcomic/option.yml", 
+            user_download_dir_pdf
+        )
+        
+        option = jmcomic.create_option_by_file(temp_option_file_pdf)
+        jmcomic.download_album(message_str, option)
+        images = find_images_os(user_download_dir)
+        yield event.plain_result(f"共找到 {len(images)} 张图片，按pdf发送：")
+        
+        # for i, img in enumerate(images, 1):
+        #     yield event.image_result(img)  # 发送图片
+        #     await asyncio.sleep(1)
+        pdf = Comp.File(file=f'{user_download_dir_pdf}/{message_str}.pdf', name=f'{message_str}.pdf')
+        yield event.chain_result([pdf])
 
+        clear_folder(user_download_dir)
+
+    @filter.command("jms")
+    async def helloworld2(self, event: AstrMessageEvent):
+        user_name = event.get_sender_name()
+        message_str = event.message_str
+        logger.info(f"Received command from {user_name}: {message_str}")
+        pages = int(extract_numbers(message_str)[0]) if extract_numbers(message_str) else 1
+        message_str = re.sub(r'\d', '', message_str)
+        yield event.plain_result(f"{user_name}, {message_str}这种题材实在是太涩啦!页面：{pages}")
+        client = JmOption.default().new_jm_client()
+        page: JmSearchPage = client.search_site(search_query=message_str, page=pages)
+        result = ""
+        for album_id, title in page:
+            result += f'[{album_id}]: {title}\n'
+        yield event.plain_result(result)
+            
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""

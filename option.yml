@@ -1,32 +1,22 @@
-client:
-  cache: null
-  domain: []
-  impl: api
-  postman:
-    meta_data:
-      headers: null
-      impersonate: chrome
-      proxies: {}
-    type: curl_cffi
-  retry_times: 5
-dir_rule:
-  base_dir: D:\Librury\Desktop\AstrBotLauncher-0.2.0\AstrBot\data\plugins\astrbot_plugin_jmcomic
-  normalize_zh: null
-  rule: Bd_Pname
 download:
-  cache: true
   image:
-    decode: true
-    suffix: .png
+    suffix: .png # 该配置用于把下载的图片转为png格式
   threading:
-    image: 30
-    photo: 24
-log: true
-plugins:
+    image: 5
+    photo: 2
+
+plugins: # 插件配置项
+  after_init: # 在after_init事件时自动执行插件
+    - plugin: login # 插件的key
+      kwargs: # 下面是给插件的参数 (kwargs)，由插件类自定义
+        username: jmzhuanyonghao # 禁漫帐号
+        password: jmzhuanyonghao # 密码
   after_photo:
     - plugin: img2pdf
       kwargs:
-        pdf_dir: D:/Librury/Desktop/AstrBotLauncher-0.2.0/AstrBot/data/plugins/astrbot_plugin_jmcomic/download
-        filename_rule: Pid
-  valid: log
-version: '2.1'
+        pdf_dir: .//data/plugins/astrbot_plugin_jmcomic/pdf
+dir_rule:
+  # base_dir: 根目录。
+  # 此配置也支持引用环境变量，例如
+  # base_dir: ${JM_DIR}/下载文件夹/
+  base_dir: ./data/plugins/astrbot_plugin_jmcomic/download # 根目录
