@@ -146,7 +146,7 @@ class MyPlugin(Star):
         # for i, img in enumerate(images, 1):
         #     yield event.image_result(img)  # 发送图片
         #     await asyncio.sleep(1)
-        pdf = Comp.File(file=os.path.abspath(os.path.join(os.path.dirname(user_download_dir_pdf), f"{str(message_str)}.pdf")), name=f'{message_str}.pdf')
+        pdf = Comp.File(file=os.path.abspath(os.path.join(os.path.dirname(user_download_dir_pdf), f"{int(message_str[0])}.pdf")), name=f'{int(message_str[0])}.pdf')
         yield event.chain_result([pdf])
 
         clear_folder(user_download_dir_pdf)
