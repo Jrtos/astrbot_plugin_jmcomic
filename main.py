@@ -158,6 +158,7 @@ class MyPlugin(Star):
         logger.info(f"Received command from {user_name}: {message_str}")
         pages = int(extract_numbers(message_str)[0]) if extract_numbers(message_str) else 1
         message_str = re.sub(r'\d', '', message_str)
+        message_str = message_str.replace('jms ', '', 1)
         yield event.plain_result(f"{user_name}, {message_str}这种题材实在是太涩啦!页面：{pages}")
         client = JmOption.default().new_jm_client()
         page: JmSearchPage = client.search_site(search_query=message_str, page=pages)
