@@ -127,12 +127,7 @@ class MyPlugin(Star):
         message_str = extract_integers(message_str)
         
         # 为每个用户创建独立的下载目录
-        user_download_dir = get_user_download_dir(user_id)
         user_download_dir_pdf = get_user_download_dir_pdf(user_id)
-        temp_option_file = create_temp_option(
-            "./data/plugins/astrbot_plugin_jmcomic/option.yml", 
-            user_download_dir
-        )
         temp_option_file_pdf = create_temp_option(
             "./data/plugins/astrbot_plugin_jmcomic/option.yml", 
             user_download_dir_pdf
@@ -166,13 +161,27 @@ class MyPlugin(Star):
         yield event.plain_result(f"{user_name}, {message_str}这种题材实在是太涩啦!页面：{pages}")
         client = JmOption.default().new_jm_client()
         page: JmSearchPage = client.search_site(search_query=message_str, page=pages)
-        if page == None:
+        if page == '':
             yield event.plain_result('没有搜索到任何东西')
 
         result = ""
         for album_id, title in page:
             result += f'[{album_id}]: {title}\n'
         yield event.plain_result(result)
+
+    @filter.command("jmc")
+    async def helloworld3(self, event: AstrMessageEvent):
+        message_str = event.message_str
+        client = JmOption.default().new_jm_client()
+        user_id = event.get_sender_id()
+        user_download_dir_pdf = get_user_download_dir_pdf(user_id)
+        client.download_album_cover(message_str, f'{user_download_dir_pdf}/cover.jpg')
+
+        yield event.image_result(f'{user_download_dir_pdf}/cover.jpg')
+
+        clear_folder(user_download_dir_pdf)
+
+
             
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
