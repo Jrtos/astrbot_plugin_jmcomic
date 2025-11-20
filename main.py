@@ -174,7 +174,7 @@ class MyPlugin(Star):
         message_str = event.message_str
         user_name = event.get_sender_name()
         message_str = message_str.replace('jmc ', '', 1)
-        yield event.plain_result(message_str)
+        yield event.plain_result(f'搜索{message_str}的封面...')
         logger.info(f"Received command from {user_name}: {message_str}")
         client = JmOption.default().new_jm_client()
         user_id = event.get_sender_id()
