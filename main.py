@@ -172,6 +172,8 @@ class MyPlugin(Star):
     @filter.command("jmc")
     async def helloworld3(self, event: AstrMessageEvent):
         message_str = event.message_str
+        user_name = event.get_sender_name()
+        logger.info(f"Received command from {user_name}: {message_str}")
         client = JmOption.default().new_jm_client()
         user_id = event.get_sender_id()
         user_download_dir_pdf = get_user_download_dir_pdf(user_id)
