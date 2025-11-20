@@ -154,7 +154,6 @@ class MyPlugin(Star):
     async def helloworld2(self, event: AstrMessageEvent):
         user_name = event.get_sender_name()
         message_str = event.message_str
-        yield event.plain_result(message_str)
         logger.info(f"Received command from {user_name}: {message_str}")
         pages = int(extract_numbers(message_str)[0]) if extract_numbers(message_str) else 1
         message_str = re.sub(r'\d', '', message_str)
@@ -174,6 +173,7 @@ class MyPlugin(Star):
     async def helloworld3(self, event: AstrMessageEvent):
         message_str = event.message_str
         user_name = event.get_sender_name()
+        yield event.plain_result(message_str)
         logger.info(f"Received command from {user_name}: {message_str}")
         client = JmOption.default().new_jm_client()
         user_id = event.get_sender_id()
