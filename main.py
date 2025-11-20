@@ -137,17 +137,21 @@ class MyPlugin(Star):
             "./data/plugins/astrbot_plugin_jmcomic/option.yml", 
             user_download_dir_pdf
         )
-        
-        option = jmcomic.create_option_by_file(temp_option_file_pdf)
-        jmcomic.download_album(message_str, option)
-        images = find_images_os(user_download_dir_pdf)
-        yield event.plain_result(f"共找到 {len(images)} 张图片，按pdf发送：")
-        
-        # for i, img in enumerate(images, 1):
-        #     yield event.image_result(img)  # 发送图片
-        #     await asyncio.sleep(1)
-        pdf = Comp.File(file=os.path.abspath(os.path.join(os.path.dirname(user_download_dir_pdf), f"{int(message_str[0])}.pdf")), name=f'{int(message_str[0])}.pdf')
-        yield event.chain_result([pdf])
+
+        if os.path.exists(os.path.abspath(os.path.join(os.path.dirname(user_download_dir_pdf), f"{int(message_str[0])}.pdf"))):
+            pdf = Comp.File(file=os.path.abspath(os.path.join(os.path.dirname(user_download_dir_pdf), f"{int(message_str[0])}.pdf")), name=f'{int(message_str[0])}.pdf')
+            yield event.chain_result([pdf])
+        else:
+            option = jmcomic.create_option_by_file(temp_option_file_pdf)
+            jmcomic.download_album(message_str, option)
+            images = find_images_os(user_download_dir_pdf)
+            yield event.plain_result(f"共找到 {len(images)} 张图片，按pdf发送：")
+            
+            # for i, img in enumerate(images, 1):
+            #     yield event.image_result(img)  # 发送图片
+            #     await asyncio.sleep(1)
+            pdf = Comp.File(file=os.path.abspath(os.path.join(os.path.dirname(user_download_dir_pdf), f"{int(message_str[0])}.pdf")), name=f'{int(message_str[0])}.pdf')
+            yield event.chain_result([pdf])
 
         clear_folder(user_download_dir_pdf)
 
@@ -162,6 +166,9 @@ class MyPlugin(Star):
         yield event.plain_result(f"{user_name}, {message_str}这种题材实在是太涩啦!页面：{pages}")
         client = JmOption.default().new_jm_client()
         page: JmSearchPage = client.search_site(search_query=message_str, page=pages)
+        if page == None:
+            yield event.plain_result('没有搜索到任何东西')
+
         result = ""
         for album_id, title in page:
             result += f'[{album_id}]: {title}\n'
